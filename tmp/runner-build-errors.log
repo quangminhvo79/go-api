@@ -1,0 +1,2 @@
+# github.com/quangminhvo79/go-api/controllers
+controllers/users.go:70:3: err declared but not used
