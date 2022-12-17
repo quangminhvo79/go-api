@@ -2,37 +2,41 @@ package routes
 
 import (
   "github.com/gin-gonic/gin"
+  "github.com/quangminhvo79/go-api/middlewares"
   "github.com/quangminhvo79/go-api/controllers"
 )
 
 func InitRouter() *gin.Engine {
   r := gin.Default()
 
-  authRoutes := r.Group("api/auth")
-  {
-    authRoutes.POST("/register", controllers.FindUsers)
-  }
+  publicAPI := r.Group("/api")
+  publicAPI.POST("/token", controllers.GenerateToken)
+  publicAPI.POST("/users/register", controllers.CreateUser)
 
-  r.GET("/users", controllers.FindUsers)
-  r.GET("/users/:id", controllers.FindUser)
-  r.POST("/users", controllers.CreateUser)
-  r.PATCH("/users/:id", controllers.UpdateUser)
-  r.DELETE("/users/:id", controllers.DeleteUser)
+  privateAPI := r.Group("/api").Use(middlewares.Auth())
+  privateAPI.GET("/users", controllers.FindUsers)
+  privateAPI.GET("/users/:id", controllers.FindUser)
+  privateAPI.PATCH("/users/:id", controllers.UpdateUser)
+  privateAPI.DELETE("/users/:id", controllers.DeleteUser)
 
-  r.GET( "/meal_histories/:user_id", controllers.FindMealHistories)
-  r.GET( "/meal_histories/:user_id/sessions/:session_id", controllers.FindMealHistoriesBySession)
-  r.POST("/meal_histories", controllers.CreateMealHistory)
-  r.PATCH("/meal_histories/:id", controllers.UpdateMealHistory)
-  r.DELETE("/meal_histories/:id", controllers.DeleteMealHistory)
+  privateAPI.GET( "/meal_histories/:user_id", controllers.FindMealHistories)
+  privateAPI.GET( "/meal_histories/:user_id/sessions/:session_id", controllers.FindMealHistoriesBySession)
+  privateAPI.POST("/meal_histories", controllers.CreateMealHistory)
+  privateAPI.PATCH("/meal_histories/:id", controllers.UpdateMealHistory)
+  privateAPI.DELETE("/meal_histories/:id", controllers.DeleteMealHistory)
 
-  r.GET( "/meal_histories/:user_id/achievement_rate", controllers.AchievementRate)
-  r.GET( "/meal_histories/:user_id/body_fat_percent_graph", controllers.BodyFatPercentageGraph)
+  privateAPI.GET( "/meal_histories/:user_id/achievement_rate", controllers.AchievementRate)
+  privateAPI.GET( "/meal_histories/:user_id/body_fat_percent_graph", controllers.BodyFatPercentageGraph)
 
-  r.GET( "/dishes", controllers.FindDishes)
-  r.GET( "/dishes/:name", controllers.FindDishesByName)
+  privateAPI.GET( "/dishes", controllers.FindDishes)
+  privateAPI.GET( "/dishes/:id_or_name", controllers.FindDishesByName)
 
-  r.GET( "/sessions", controllers.FindSessions)
-  r.GET( "/sessions/:name", controllers.FindSessionsByName)
+  privateAPI.GET( "/sessions", controllers.FindSessions)
+  privateAPI.GET( "/sessions/:id_or_name", controllers.FindSessionsByName)
+
+  privateAPI.GET( "/exercises", controllers.FindExercises)
+  privateAPI.GET( "/exercises/:id_or_name", controllers.FindExercisesBy)
+
 
   return r
 }

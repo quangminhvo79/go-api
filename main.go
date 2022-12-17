@@ -1,13 +1,16 @@
 package main
 
 import (
-  "github.com/quangminhvo79/go-api/models"
+  "github.com/quangminhvo79/go-api/database"
   "github.com/quangminhvo79/go-api/routes"
 )
 
 func main() {
-  models.ConnectDatabase()
-  defer models.CloseDatabaseConnection()
+  database.ConnectDatabase()
+  database.Migrate()
+
+  defer database.CloseDatabaseConnection()
+
   r := routes.InitRouter()
   r.Run()
 }

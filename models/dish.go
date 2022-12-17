@@ -1,6 +1,9 @@
 package models
 
+import "gorm.io/gorm"
+
 type Dish struct {
+  gorm.Model
   ID       uint    `json:"id" gorm:"primary_key"`
   Name     string  `json:"name"`
   Calories float32 `json:"calories"`

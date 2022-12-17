@@ -4,22 +4,26 @@ import (
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"github.com/quangminhvo79/go-api/models"
+	"github.com/quangminhvo79/go-api/database"
 )
 
 // GET /dishes
 func FindDishes(c *gin.Context) {
 	var dishes []models.Dish
-	models.DB.Find(&dishes)
+	database.DB.Find(&dishes)
 
 	c.JSON(http.StatusOK, gin.H{ "status": true, "result": dishes })
 }
 
-// GET /dishes/:name
+// GET /dishes/:id_or_name
 func FindDishesByName(c *gin.Context) {
 	var dish models.Dish
 
-  if err := models.DB.Where("LOWER(name) LIKE ?", "%" + c.Param("name") + "%").First(&dish).Error; err != nil {
-    c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+	name := "%" + c.Param("id_or_name") + "%"
+	id := c.Param("id_or_name")
+
+  if err := database.DB.Where("LOWER(name) LIKE ? OR id = ?", name, id).First(&dish).Error; err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
     return
   }
 

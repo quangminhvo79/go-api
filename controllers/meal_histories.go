@@ -6,6 +6,7 @@ import (
   "time"
   "github.com/gin-gonic/gin"
   "github.com/quangminhvo79/go-api/models"
+  "github.com/quangminhvo79/go-api/database"
 )
 
 // GET /meal_histories/:user_id
@@ -13,7 +14,7 @@ func FindMealHistories(c *gin.Context) {
 	var meal_histories []models.MealHistory
 
   uID, _ := strconv.Atoi(c.Param("user_id"))
-  results := models.MealHistories().Scopes(models.MealHistoriesByUser(uID)).Find(&meal_histories);
+  results := database.MealHistories().Scopes(database.MealHistoriesByUser(uID)).Find(&meal_histories);
 
   if results.Error != nil || results.RowsAffected == 0 {
     c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": "Record not found!" })
@@ -30,9 +31,9 @@ func FindMealHistoriesBySession(c *gin.Context) {
   sID, _ := strconv.Atoi(c.Param("session_id"))
   uID, _ := strconv.Atoi(c.Param("user_id"))
 
-  results := models.MealHistories().Scopes(
-    models.MealHistoriesByUser(uID),
-    models.MealHistoriesBySession(sID),
+  results := database.MealHistories().Scopes(
+    database.MealHistoriesByUser(uID),
+    database.MealHistoriesBySession(sID),
   ).Find(&meal_histories);
 
   if results.Error != nil || results.RowsAffected == 0  {
@@ -47,7 +48,7 @@ func FindMealHistoriesBySession(c *gin.Context) {
 func CreateMealHistory(c *gin.Context) {
   var input models.CreateMealHistoryInput
   if err := c.ShouldBindJSON(&input); err != nil {
-    c.JSON(http.StatusBadRequest, gin.H{ "status": false, "error": err.Error() })
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": err.Error() })
     return
   }
 
@@ -58,7 +59,7 @@ func CreateMealHistory(c *gin.Context) {
     UserID: input.UserID,
   }
 
-  models.DB.Create(&meal_history)
+  database.DB.Create(&meal_history)
 
   c.JSON(http.StatusOK, gin.H{ "status": true, "result": meal_history })
 }
@@ -68,7 +69,7 @@ func UpdateMealHistory(c *gin.Context) {
   var meal_history models.MealHistory
   ID, _ := strconv.Atoi(c.Param("id"))
 
-  if err := models.MealHistoryByID(ID).First(&meal_history).Error; err != nil {
+  if err := database.MealHistoryByID(ID).First(&meal_history).Error; err != nil {
     c.AbortWithStatusJSON(http.StatusNotFound, gin.H{ "status": false, "error": "Record not found" })
     return
   }
@@ -85,7 +86,7 @@ func UpdateMealHistory(c *gin.Context) {
     DishID: input.DishID,
     UserID: input.UserID}
 
-  models.DB.Model(&meal_history).Updates(&updateMealHistory)
+  database.DB.Model(&meal_history).Updates(&updateMealHistory)
 
   c.JSON(http.StatusOK, gin.H{ "status": true, "result": updateMealHistory })
 }
@@ -95,12 +96,12 @@ func DeleteMealHistory(c *gin.Context) {
   var meal_history models.MealHistory
   ID, _ := strconv.Atoi(c.Param("id"))
 
-  if err := models.MealHistoryByID(ID).First(&meal_history).Error; err != nil {
-    c.JSON(http.StatusBadRequest, gin.H{ "status": false, "error": "Record not found!" })
+  if err := database.MealHistoryByID(ID).First(&meal_history).Error; err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": "Record not found!" })
     return
   }
 
-  models.DB.Delete(&meal_history)
+  database.DB.Delete(&meal_history)
 
   c.JSON(http.StatusOK, gin.H{ "status": true })
 }
@@ -118,7 +119,7 @@ func BodyFatPercentageGraph(c *gin.Context) {
   var meal_histories []models.BodyFatPercentGraph
   uID, _ := strconv.Atoi(c.Param("user_id"))
 
-  results := models.MealHistories().Scopes(models.MealHistoriesByUser(uID)).
+  results := database.MealHistories().Scopes(database.MealHistoriesByUser(uID)).
     Select("meal_histories.*", "SUM(Dish.calories) as total_calories").
     Group("DATE(meal_histories.date)").
     Find(&meal_histories);
