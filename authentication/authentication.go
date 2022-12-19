@@ -3,13 +3,12 @@ package authentication
 import (
 	"errors"
 	"time"
-  "gorm.io/gorm"
 	"github.com/golang-jwt/jwt/v4"
 )
 
 var jwtKey = []byte("Vzd2uNBkUm7JxdYRhWsy7qNlsikga0wN")
 var Claims *JWTClaim
-var UserScope *gorm.DB
+var UserID uint64
 
 type JWTClaim struct {
 	Username string `json:"username"`

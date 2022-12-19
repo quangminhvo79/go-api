@@ -1,29 +1,29 @@
 package models
 
 import (
-  "gorm.io/gorm"
   "golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-  gorm.Model
-  ID     		              uint   `json:"id" gorm:"primary_key"`
+  ID     		              uint64   `json:"id" gorm:"primary_key"`
   Email  		              string `json:"email"`
   Password 	              string `json:"password"`
   Username                string `json:"username"`
   AchievementWeightFrom   float32 `json:"achievement_weight_from"`
   AchievementWeightTo     float32 `json:"achievement_weight_to"`
+  Exercises               []UserExercise `json:"exercises" gorm:"foreignKey:UserID"`
 }
 
 type UserOutput struct {
-  ID                      uint   `json:"id"`
+  ID                      uint64   `json:"id"`
   Email                   string `json:"email"`
   Username                string `json:"username"`
   AchievementWeightFrom   float32 `json:"achievement_weight_from"`
   AchievementWeightTo     float32 `json:"achievement_weight_to"`
+  Exercises               []UserExercise `json:"exercises" gorm:"foreignKey:UserID"`
 }
 
-type CreateUserInput struct {
+type UserInput struct {
   Email                   string `json:"email" binding:"required"`
   Password                string `json:"password" binding:"required"`
   Username                string `json:"username" binding:"required"`
@@ -56,6 +56,14 @@ func (user *User) CheckPassword(providedPassword string) error {
   return nil
 }
 
+func (u *User) AssignAttributes(input UserInput) {
+  u.Email = input.Email
+  u.Password = input.Password
+  u.Username = input.Username
+  u.AchievementWeightFrom = input.AchievementWeightFrom
+  u.AchievementWeightTo = input.AchievementWeightTo
+}
+
 func (user *User) UserResponseData() UserOutput {
   return UserOutput{
     ID: user.ID,
@@ -63,5 +71,6 @@ func (user *User) UserResponseData() UserOutput {
     Username: user.Username,
     AchievementWeightFrom: user.AchievementWeightFrom,
     AchievementWeightTo: user.AchievementWeightTo,
+    Exercises: user.Exercises,
   }
 }

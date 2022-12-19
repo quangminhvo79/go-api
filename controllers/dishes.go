@@ -16,7 +16,7 @@ func FindDishes(c *gin.Context) {
 }
 
 // GET /dishes/:id_or_name
-func FindDishesByName(c *gin.Context) {
+func FindDishesBy(c *gin.Context) {
 	var dish models.Dish
 
 	name := "%" + c.Param("id_or_name") + "%"

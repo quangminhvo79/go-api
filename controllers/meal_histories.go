@@ -2,20 +2,19 @@ package controllers
 
 import (
 	"net/http"
-  "strconv"
   "time"
   "github.com/gin-gonic/gin"
+  "gorm.io/gorm"
   "github.com/quangminhvo79/go-api/models"
   "github.com/quangminhvo79/go-api/database"
+  "github.com/quangminhvo79/go-api/scopes"
 )
 
-// GET /meal_histories/:user_id
+// GET /api/meal_histories
 func FindMealHistories(c *gin.Context) {
 	var meal_histories []models.MealHistory
 
-  uID, _ := strconv.Atoi(c.Param("user_id"))
-  results := database.MealHistories().Scopes(database.MealHistoriesByUser(uID)).Find(&meal_histories);
-
+  results := mealHistoriesScopes().Find(&meal_histories)
   if results.Error != nil || results.RowsAffected == 0 {
     c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": "Record not found!" })
     return
@@ -24,84 +23,57 @@ func FindMealHistories(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{ "status": true, "total": results.RowsAffected, "result": meal_histories })
 }
 
-// GET /meal_histories/:user_id/session/:session_id
-func FindMealHistoriesBySession(c *gin.Context) {
-  var meal_histories []models.MealHistory
+// GET /api/meal_histories/:id
+func FindMealHistory(c *gin.Context) {
+  var meal_history models.MealHistory
 
-  sID, _ := strconv.Atoi(c.Param("session_id"))
-  uID, _ := strconv.Atoi(c.Param("user_id"))
-
-  results := database.MealHistories().Scopes(
-    database.MealHistoriesByUser(uID),
-    database.MealHistoriesBySession(sID),
-  ).Find(&meal_histories);
-
-  if results.Error != nil || results.RowsAffected == 0  {
+  results := mealHistoriesScopes().Where("meal_histories.id = ?", c.Param("id")).First(&meal_history)
+  if results.Error != nil || results.RowsAffected == 0 {
     c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": "Record not found!" })
     return
   }
 
-  c.JSON(http.StatusOK, gin.H{ "status": true, "total": results.RowsAffected, "result": meal_histories })
+  c.JSON(http.StatusOK, gin.H{ "status": true, "result": meal_history })
 }
 
-// POST /meal_histories
+// POST /api/meal_histories
 func CreateMealHistory(c *gin.Context) {
-  var input models.CreateMealHistoryInput
+  var input models.MealHistoryInput
   if err := c.ShouldBindJSON(&input); err != nil {
     c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": err.Error() })
     return
   }
 
-  meal_history := models.MealHistory{
-    Date: input.Date,
-    SessionID: input.SessionID,
-    DishID: input.DishID,
-    UserID: input.UserID,
-  }
-
+  var meal_history models.MealHistory
+  meal_history.AssignAttributes(input)
   database.DB.Create(&meal_history)
 
   c.JSON(http.StatusOK, gin.H{ "status": true, "result": meal_history })
 }
 
-// PATCH /meal_histories/:id
+// PATCH /api/meal_histories/:id
 func UpdateMealHistory(c *gin.Context) {
-  var meal_history models.MealHistory
-  ID, _ := strconv.Atoi(c.Param("id"))
-
-  if err := database.MealHistoryByID(ID).First(&meal_history).Error; err != nil {
-    c.AbortWithStatusJSON(http.StatusNotFound, gin.H{ "status": false, "error": "Record not found" })
-    return
-  }
-
-  var input models.UpdateMealHistoryInput
+  var input models.MealHistoryInput
   if err := c.ShouldBindJSON(&input); err != nil {
     c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": err.Error() })
     return
   }
 
-  updateMealHistory := models.MealHistory{
-    Date: input.Date,
-    SessionID: input.SessionID,
-    DishID: input.DishID,
-    UserID: input.UserID}
-
-  database.DB.Model(&meal_history).Updates(&updateMealHistory)
-
-  c.JSON(http.StatusOK, gin.H{ "status": true, "result": updateMealHistory })
-}
-
-// DELETE /meal_histories/:id
-func DeleteMealHistory(c *gin.Context) {
   var meal_history models.MealHistory
-  ID, _ := strconv.Atoi(c.Param("id"))
+  meal_history.AssignAttributes(input)
+  record := database.DB.Where("id = ?", c.Param("id")).Updates(&meal_history)
 
-  if err := database.MealHistoryByID(ID).First(&meal_history).Error; err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": "Record not found!" })
+  if record.Error != nil {
+    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{ "status": false, "error": record.Error.Error() })
     return
   }
 
-  database.DB.Delete(&meal_history)
+  c.JSON(http.StatusOK, gin.H{ "status": true, "result": meal_history })
+}
+
+// DELETE /api/meal_histories/:id
+func DeleteMealHistory(c *gin.Context) {
+  database.DB.Delete(&models.MealHistory{}, c.Param("id"))
 
   c.JSON(http.StatusOK, gin.H{ "status": true })
 }
@@ -117,17 +89,19 @@ func AchievementRate(c *gin.Context) {
 // GET /meal_histories/:user_id/body_fat_percent_graph
 func BodyFatPercentageGraph(c *gin.Context) {
   var meal_histories []models.BodyFatPercentGraph
-  uID, _ := strconv.Atoi(c.Param("user_id"))
 
-  results := database.MealHistories().Scopes(database.MealHistoriesByUser(uID)).
-    Select("meal_histories.*", "SUM(Dish.calories) as total_calories").
-    Group("DATE(meal_histories.date)").
-    Find(&meal_histories);
+  results := mealHistoriesScopes().Select("meal_histories.*", "SUM(Dish.calories) as total_calories").
+                                   Group("DATE(meal_histories.date)").
+                                   Find(&meal_histories);
 
   if results.Error != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": "Record not found!" })
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "result": nil })
     return
   }
 
   c.JSON(http.StatusOK, gin.H{ "status": true, "total": results.RowsAffected, "result": meal_histories })
+}
+
+func mealHistoriesScopes() *gorm.DB {
+  return database.DB.Scopes(scopes.MealHistories)
 }

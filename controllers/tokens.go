@@ -20,7 +20,7 @@ func GenerateToken(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// check if email exists and password is correct
+
 	record := database.DB.Where("email = ?", request.Email).First(&user)
 	if record.Error != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})

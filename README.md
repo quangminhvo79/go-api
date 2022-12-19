@@ -41,14 +41,63 @@ type MealHistory struct {
   UserID           uint       `json:"user_id"`
 }
 
+// Management Body Record of Users
+type BodyRecord struct {
+  ID       uint64         `json:"id" gorm:"primary_key"`
+  Date     time.Time      `json:"date"`
+  Weight   float32        `json:"weight"`
+  Height   float32        `json:"height"`
+  UserID   uint64         `json:"user_id"`
+}
+
+// Management Diary of User
+// This record will tracking Exercise that user have trained in day and help we calculate calories loss by exercise
+type Diary struct {
+  ID                      uint64              `json:"id" gorm:"primary_key"`
+  Date                    time.Time           `json:"date"`
+  Note                    string              `json:"note"`
+  UserID                  uint64              `json:"user_id"`
+  User                    User
+  ExerciseHistories       []ExerciseHistory
+}
+
+// This Model used to save the exercises that the user often uses
+type UserExercise struct {
+  ID             uint64         `json:"id" gorm:"primary_key"`
+  UserID         uint64         `json:"user_id" gorm:"index:,unique,composite:user_exercises_id"`
+  ExerciseID     uint64         `json:"exercise_id" gorm:"index:,unique,composite:user_exercises_id"`
+}
+
+// List of Exercise in Application
+type Exercise struct {
+  ID             uint64    `json:"id" gorm:"primary_key"`
+  Name           string    `json:"name"`
+  CaloriesBurned float32   `json:"calories_burned"`
+}
+
+// This model used to track the exercise that user already train in a day
+type ExerciseHistory struct {
+  ID               uint64       `json:"id" gorm:"primary_key"`
+  DiaryID          uint64       `json:"diary_id"`
+  ExerciseID       uint64       `json:"exercise_id"`
+  Exercise         Exercise
+}
+
+// This model used to management the health posts
+type Post struct {
+  ID               uint64       `json:"id" gorm:"primary_key"`
+  DiaryID          uint64       `json:"diary_id"`
+  ExerciseID       uint64       `json:"exercise_id"`
+  Exercise         Exercise
+}
 ```
 ## API Documents
 
 **1.  User**
 > Get all users
-> `GET` /users
+> `GET` /api/users
 ```json
-`curl "GET /users"
+`curl "GET /api/users"
 {
   "result": [
     {
@@ -64,9 +113,9 @@ type MealHistory struct {
 }
 ```
 > Get by id
-> `GET` /users/:id
+> `GET` /api/users/:id
 ```json
-`curl "GET /users/1"
+`curl "GET /api/users/1"
 {
   "result": {
       "id": 1,
@@ -80,9 +129,9 @@ type MealHistory struct {
 }
 ```
 > Create user
-> `POST` /users
+> `POST` /api/users
 ```json
-`curl "POST /users"
+`curl "POST /api/users"
 params:
 {
    "email": "man@gmail.com",
@@ -105,9 +154,9 @@ params:
 }
 ```
 > Update user
-> `PATCH` /users
+> `PATCH` /api/users
 ```json
-`curl "PATCH /users"
+`curl "PATCH /api/users"
 params:
 {
    "email": "man@gmail.com",
@@ -130,18 +179,18 @@ params:
 }
 ```
 > Delete user
-> `DELETE` /users
+> `DELETE` /api/users
 ```json
-`curl "PATCH /users"
+`curl "DELETE /api/users"
 {
   status: true
 }
 ```
 **2. Meal History**
-> Get all Meal Histories by User
-> `GET` /meal_histories/:user_id
+> Get all Meal Histories (this will get all Meal History by user token)
+> `GET` /api/meal_histories
 ```json
-e.g: curl "GET /meal_histories/1".
+e.g: curl "GET /api/meal_histories".
 {
   "result": [
       {
@@ -174,10 +223,10 @@ e.g: curl "GET /meal_histories/1".
     }
 }
 ```
-> Get all Meal Histories by User By Session
-> `GET` /meal_histories/:user_id/sessions/:session_id
+> Get all Meal Histories By Session ( reference with user token )
+> `GET` /api/sessions/:id/meal_histories
 ```json
-e.g: curl "GET /meal_histories/1/sessions/2".
+e.g: curl "GET /api/sessions/2/meal_histories".
 {
   "result": [
       {
@@ -213,7 +262,7 @@ e.g: curl "GET /meal_histories/1/sessions/2".
 > Get User Achievement Rate
 > `GET` /meal_histories/:user_id/achievement_rate
 ```json
-e.g: curl "GET /meal_histories/23/achievement_rate"
+e.g: curl "GET /api/achievement_rate"
 {
   "result": {
     "achievement_rate": 75,
@@ -224,9 +273,9 @@ e.g: curl "GET /meal_histories/23/achievement_rate"
 ```
 
 > Get User Body Fat Percent Graph
-> `GET` /meal_histories/:user_id/body_fat_percent_graph
+> `GET` /api/body_fat_percent_graph
 ```json
-e.g: curl "GET /meal_histories/23/achievement_rate"
+e.g: curl "GET /api/body_fat_percent_graph"
 {
   "result": [
     {
@@ -244,9 +293,9 @@ e.g: curl "GET /meal_histories/23/achievement_rate"
 }
 ```
 > Create Meal History
-> `POST` /meal_histories
+> `POST` /api/meal_histories
 ```json
-e.g: curl "POST /meal_histories".
+e.g: curl "POST /api/meal_histories".
 params:
 {
   "date": "2022-12-09T12:00:00Z",
@@ -270,9 +319,9 @@ params:
 }
 ```
 > Update Meal History
-> `PATCH` /meal_histories/:id
+> `PATCH` /api/meal_histories/:id
 ```json
-e.g: curl "PATCH /meal_histories".
+e.g: curl "PATCH /api/meal_histories".
 params:
 {
   "date": "2022-12-09T12:00:00Z",
@@ -296,18 +345,18 @@ params:
 }
 ```
 > Delete Meal History
-> `DELETE` /meal_histories/:id
+> `DELETE` /api/meal_histories/:id
 ```json
-e.g: curl "DELETE /meal_histories/23".
+e.g: curl "DELETE /api/meal_histories/23".
 {
   "status": true
 }
 ```
 **3. Dish**
 > Get all dishes
-> `GET` /dishes
+> `GET` /api/dishes
 ```json
-`curl "GET /dishes"
+`curl "GET /api/dishes"
 {
   "result": [
     {
@@ -319,8 +368,8 @@ e.g: curl "DELETE /meal_histories/23".
   "status": true
 }
 ```
-> Search dish by name
-> `GET` /dishes/:name
+> Search dish by id or name
+> `GET` /api/dishes/:id
 ```json
 `curl "GET /dishes/beefsteak"
 {
@@ -349,8 +398,8 @@ e.g: curl "DELETE /meal_histories/23".
   "status": true
 }
 ```
-> Search session by name
-> `GET` /sessions/:name
+> Search session by id or name
+> `GET` /sessions/:id
 ```json
 `curl "GET /sessions/morning"
 {
@@ -361,6 +410,100 @@ e.g: curl "DELETE /meal_histories/23".
     }, {...}
   ]
   "status": true
+}
+```
+> Search user exercise
+> `GET` /api/user_exercises
+```json
+`curl "GET /api/user_exercises"
+{
+  "result": [
+    {
+      "user_id": 1,
+      "exercise_id": 2,
+    }, {...}
+  ]
+  "status": true
+}
+```
+
+> Bookmark exercise
+> `POST` /api/user_exercises
+```json
+`curl "POST /api/user_exercises"
+{
+  "result": {
+    "user_id": 1,
+    "exercise_id": 2,
+  },
+  "status": true
+}
+```
+> Search body records
+> `GET` /api/body_records
+```json
+`curl "GET /api/body_records"
+{
+  "result": [
+    {
+      "date": "2022-12-09T12:00:00Z",
+      "weight": 70,
+      "height": 180,
+      "user_id": 2,
+    }, {...}
+  ]
+  "status": true
+}
+```
+> Create Body Records
+> `POST` /api/body_records
+```json
+`curl "POST /api/body_records"
+{
+  "date": "2022-12-09T12:00:00Z",
+  "weight": 70,
+  "height": 180,
+}
+```
+> Search Diaries
+> `GET` /api/diaries
+```json
+`curl "GET /api/diaries"
+{
+  "result": [
+    {
+      "date": "2022-12-09T12:00:00Z",
+      "note": "Diary Note",
+      "user_id": 2,
+      "exercise_histories": [{ "exercise_id": 1, "diary_id": 2 }],
+    }, {...}
+  ],
+  "status": true
+}
+```
+> GET Diary
+> `GET` /api/diaries/:id
+```json
+`curl "GET /api/diaries/:id"
+{
+  "result": {
+    "date": "2022-12-09T12:00:00Z",
+    "note": "Diary Note",
+    "user_id": 2,
+    "exercise_histories": [{ "exercise_id": 1, "diary_id": 2 }],
+  },
+  "status": true
+}
+```
+
+> Create Diary
+> `POST` /api/diaries
+```json
+`curl "GET /api/diaries/:id"
+{
+  "date": "2022-12-09T12:00:00Z",
+  "note": "Diary Note",
+  "user_id": 2
 }
 ```
 
@@ -378,4 +521,11 @@ The system response a list of body fat of user based on Meal History data
 With each input will be use with API `Get Session by Name` corresponding
 
 **Meal history**
-This section will be use API `Get Meal History by Users` or `Get Meal History By Session` to get data corresponding with requirement
+This section will be use API `GET /api/meal_histories` or `GET /sessions/:id/meal_histories` to get data corresponding with requirement
+
+**Exercise record**
+This section will be use API `GET /api/user_exercises` to get data corresponding with requirement
+
+**Health Post**
+This section will be use API `GET /api/posts` or `GET /api/posts/:id` to get data corresponding with requirement
+

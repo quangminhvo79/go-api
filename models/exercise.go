@@ -1,10 +1,7 @@
 package models
 
-import "gorm.io/gorm"
-
 type Exercise struct {
-  gorm.Model
-  ID       			 uint    `json:"id" gorm:"primary_key"`
+  ID       			 uint64    `json:"id" gorm:"primary_key"`
   Name     			 string  `json:"name"`
   CaloriesBurned float32 `json:"calories_burned"`
 }

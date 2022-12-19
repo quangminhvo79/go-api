@@ -1,8 +1,11 @@
 package middlewares
 
 import (
+	"net/http"
 	"github.com/quangminhvo79/go-api/authentication"
-	"github.com/quangminhvo79/go-api/policies"
+	"github.com/quangminhvo79/go-api/models"
+	"github.com/quangminhvo79/go-api/database"
+	"github.com/quangminhvo79/go-api/scopes"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,12 +24,13 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 
-		loadPolicyScopes()
+		var user models.User
+		if err := database.DB.Scopes(scopes.User).First(&user).Error; err != nil {
+	    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{ "status": false, "error": "Invalid credentials!" })
+	    return
+	  }
+	  authentication.UserID = user.ID
 
 		c.Next()
 	}
-}
-
-func loadPolicyScopes() {
-	authentication.UserScope = policies.UserScope(authentication.Claims.Email)
 }
