@@ -5,6 +5,7 @@ type ExerciseHistory struct {
   DiaryID          uint64       `json:"diary_id"`
   ExerciseID       uint64       `json:"exercise_id"`
   Exercise         Exercise
+  Diary            Diary
 }
 
 type ExerciseHistoryInput struct {

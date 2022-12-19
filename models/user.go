@@ -25,16 +25,8 @@ type UserOutput struct {
 
 type UserInput struct {
   Email                   string `json:"email" binding:"required"`
-  Password                string `json:"password" binding:"required"`
-  Username                string `json:"username" binding:"required"`
-  AchievementWeightFrom   float32 `json:"achievement_weight_from"`
-  AchievementWeightTo     float32 `json:"achievement_weight_to"`
-}
-
-type UpdateUserInput struct {
-  Email                   string `json:"email"`
   Password                string `json:"password"`
-  Username                string `json:"username"`
+  Username                string `json:"username" binding:"required"`
   AchievementWeightFrom   float32 `json:"achievement_weight_from"`
   AchievementWeightTo     float32 `json:"achievement_weight_to"`
 }

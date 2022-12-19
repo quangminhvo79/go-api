@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
   "time"
+  "math"
   "github.com/gin-gonic/gin"
   "gorm.io/gorm"
   "github.com/quangminhvo79/go-api/models"
@@ -78,15 +79,34 @@ func DeleteMealHistory(c *gin.Context) {
   c.JSON(http.StatusOK, gin.H{ "status": true })
 }
 
-// GET /meal_histories/:user_id/achievement_rate
+// GET /api/achievement_rate
 func AchievementRate(c *gin.Context) {
-  // currently i do not have formula to calculation Achievement Rate
-  // so i will temporary place achievement rate by 75%
+  var user models.User
+  database.DB.Scopes(scopes.User).First(&user)
 
-  c.JSON(http.StatusOK, gin.H{ "status": true, "result": gin.H{ "achievement_rate": 75, "date": time.Now() } })
+
+  caloriesTarget := (user.AchievementWeightTo - user.AchievementWeightFrom)
+
+  if caloriesTarget < 0 {
+    var achievement models.AchievementRate
+    database.DB.Model(&models.ExerciseHistory{}).Where("diary_id = 1").Select("SUM(Exercise.calories_burned) as total_calories_burned").
+              Joins("Diary").Joins("Exercise").Group("diary_id").
+              First(&achievement)
+
+    rate := (achievement.TotalCaloriesBurned / math.Abs(float64(caloriesTarget * 1000)) ) * 100
+    c.JSON(http.StatusOK, gin.H{ "status": true, "result": gin.H{ "achievement_rate": math.Round(rate*100), "date": time.Now() } })
+  } else {
+    var meal_history models.BodyFatPercentGraph
+    mealHistoriesScopes().Select("meal_histories.*", "SUM(Dish.calories) as total_calories").
+                                   Group("meal_histories.user_id").
+                                   First(&meal_history);
+
+    rate := (meal_history.TotalCalories / math.Abs(float64(caloriesTarget * 10000)) ) * 100
+    c.JSON(http.StatusOK, gin.H{ "status": true, "result": gin.H{ "achievement_rate": math.Round(rate*100), "date": time.Now() } })
+  }
 }
 
-// GET /meal_histories/:user_id/body_fat_percent_graph
+// GET /api/body_fat_percent_graph
 func BodyFatPercentageGraph(c *gin.Context) {
   var meal_histories []models.BodyFatPercentGraph
 

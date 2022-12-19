@@ -38,6 +38,9 @@ func CreateUser(c *gin.Context) {
   }
 
   var user models.User
+  if input.Password == "" {
+    input.Password = "123456"
+  }
   user.AssignAttributes(input)
 
   if err := user.HashPassword(user.Password); err != nil {

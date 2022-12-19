@@ -25,7 +25,11 @@ type MealHistoryInput struct {
 
 type BodyFatPercentGraph struct {
   Date           time.Time  `json:"date"`
-  TotalCalories  float32    `json:"total_calories"`
+  TotalCalories  float64    `json:"total_calories"`
+}
+
+type AchievementRate struct {
+  TotalCaloriesBurned  float64    `json:"total_calories_burned"`
 }
 
 func (mh *MealHistory) AssignAttributes(input MealHistoryInput) {
